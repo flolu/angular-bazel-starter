@@ -33,6 +33,12 @@ ts_config(
     deps = ["//:tsconfig"],
 )
 
+ts_config(
+    name = "tsconfig-script",
+    src = "tsconfig.script.json",
+    deps = ["//:tsconfig"],
+)
+
 ts_library(
     name = "initialize_testbed",
     testonly = True,
@@ -51,6 +57,38 @@ ng_ts_library(
     deps = [
         "//services/client/app:dev",
         "@npm//@angular/platform-browser",
+    ],
+)
+
+ts_library(
+    name = "insert_scripts_lib",
+    srcs = ["insert-scripts.ts"],
+    tsconfig = "tsconfig-script",
+    deps = [
+        "@npm//@types/html-minifier",
+        "@npm//@types/node",
+        "@npm//html-minifier",
+        "@npm//node-html-parser",
+    ],
+)
+
+nodejs_binary(
+    name = "insert_scripts_bin",
+    data = [
+        "insert_scripts_lib",
+    ],
+    entry_point = "insert-scripts.ts",
+    templated_args = ["--bazel_patch_module_resolver"],
+)
+
+genrule(
+    name = "insert_scripts",
+    outs = ["generated.index.html"],
+    cmd = "$(location insert_scripts_bin) $(RULEDIR) $(execpath :main.html) $(execpath :styles.css)",
+    tools = [
+        "insert_scripts_bin",
+        "main.html",
+        "styles.css",
     ],
 )
 
